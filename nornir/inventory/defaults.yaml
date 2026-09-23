@@ -1,0 +1,4 @@
+---
+# Per-group creds/platform (set in groups.yaml) take precedence over
+# these where they overlap; kept here mainly for the eos/srlinux
+# username+password pairs.

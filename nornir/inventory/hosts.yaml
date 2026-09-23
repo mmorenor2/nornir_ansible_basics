@@ -1,0 +1,44 @@
+---
+# FRR hosts: 'hostname' holds the container NAME, not an IP - there's no
+# SSH daemon in the FRR image, so the Nornir tasks for this group shell
+# out to `docker exec <hostname> vtysh` instead of connecting over the
+# network. Only works when Nornir runs on the same host as containerlab.
+r1:
+  hostname: clab-netauto-lab-r1
+  groups: [frr]
+  data:
+    as_number: 65000
+
+r2:
+  hostname: clab-netauto-lab-r2
+  groups: [frr]
+  data:
+    as_number: 65000
+
+r4:
+  hostname: clab-netauto-lab-r4
+  groups: [frr]
+  data:
+    as_number: 65000
+
+r5:
+  hostname: clab-netauto-lab-r5
+  groups: [frr]
+  data:
+    as_number: 65100
+
+# r3/r6: no username/password here - scripts/common.py's init_nornir()
+# injects them per-group from environment variables (see .env.example)
+# after loading inventory, so no credential ever sits in a committed file.
+r3:
+  hostname: 172.100.100.13
+  groups: [eos]
+  data:
+    as_number: 65000
+
+r6:
+  hostname: 172.100.100.16
+  groups: [srlinux]
+  data:
+    as_number: 65200
+    loopback: 6.6.6.6

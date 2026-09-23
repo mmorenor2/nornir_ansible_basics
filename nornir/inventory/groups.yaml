@@ -1,0 +1,7 @@
+---
+frr:
+  platform: frr
+eos:
+  platform: arista_eos
+srlinux:
+  platform: nokia_srlinux
