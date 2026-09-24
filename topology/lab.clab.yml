@@ -1,0 +1,89 @@
+# Mixed-vendor MPLS core + 2 CPE, matching your reference diagram.
+#
+#              r5 (AS65100, lo 5.5.5.5, adv 172.16.5.0/24)
+#               | eth1 --- eth3 |
+#              r1 (RR, AS65000, lo 1.1.1.1)        <- FRR
+#             /  eth1        eth2  \
+#           r2 (AS65000, lo 2.2.2.2)  r3 (AS65000, lo 3.3.3.3)   <- FRR, cEOS
+#             \  eth2        eth2  /
+#              r4 (AS65000, lo 4.4.4.4)             <- FRR
+#               | eth3 --- e1-1 |
+#              r6 (AS65200, lo 6.6.6.6, adv 172.16.6.0/24)       <- SR Linux
+#
+# Core (r1-r4): OSPF area 0 IGP + LDP (real label switching, not just BGP)
+# + iBGP with r1 as route-reflector, r2/r3/r4 as clients.
+# r5/r6: CPE, eBGP only, no IGP/LDP participation.
+#
+# Node-kind choices, by role/protocol fit:
+#   - FRR (r1, r2, r4, r5): open source, real ldpd (no licensing), used for
+#     the RR and the majority of nodes per your ask.
+#   - Arista cEOS (r3): one core P-router seat. cEOS-lab has a genuine
+#     working MPLS data plane since EOS 4.31.2F (confirmed via
+#     https://blog.ipspace.net/2024/08/arista-ceos-mpls-data-plane/), and
+#     arista.eos is the most mature Ansible/Nornir network collection
+#     going, so this is the highest-value node to automate.
+#   - Nokia SR Linux (r6): one CPE seat. IMPORTANT: containerlab's own
+#     SR Linux docs say MPLS features require a license the free lab
+#     image does not include ("without the license provided, the lab
+#     will not start") - so SR Linux could NOT sit in the LDP core here.
+#     CPE is eBGP-only, no MPLS needed, and it reuses the full
+#     Ansible/Nornir JSON-RPC tooling already built for it.
+#
+# YOU ALREADY HAVE THE cEOS AND SR LINUX IMAGES - check their exact local
+# tags with `docker images` and fix the two `image:` lines below if they
+# don't match `ceos:4.32.0F` / `ghcr.io/nokia/srlinux:latest`.
+
+name: netauto-lab
+
+mgmt:
+  network: clab-mgmt
+  ipv4-subnet: 172.100.100.0/24
+
+topology:
+  nodes:
+    r1:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      mgmt-ipv4: 172.100.100.11
+      binds:
+        - configs/frr-daemons:/etc/frr/daemons
+        - configs/r1.conf:/etc/frr/frr.conf
+    r2:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      mgmt-ipv4: 172.100.100.12
+      binds:
+        - configs/frr-daemons:/etc/frr/daemons
+        - configs/r2.conf:/etc/frr/frr.conf
+    r3:
+      kind: arista_ceos
+      image: ceos:4.36.2F              # <- check against `docker images`
+      mgmt-ipv4: 172.100.100.13
+      startup-config: configs/r3.cfg
+    r4:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      mgmt-ipv4: 172.100.100.14
+      binds:
+        - configs/frr-daemons:/etc/frr/daemons
+        - configs/r4.conf:/etc/frr/frr.conf
+    r5:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      mgmt-ipv4: 172.100.100.15
+      binds:
+        - configs/frr-daemons:/etc/frr/daemons
+        - configs/r5.conf:/etc/frr/frr.conf
+    r6:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux:latest   # <- check against `docker images`
+      mgmt-ipv4: 172.100.100.16
+      startup-config: configs/r6.cfg
+
+  links:
+    - endpoints: ["r1:eth1", "r2:eth1"]   # 10.0.12.0/30
+    - endpoints: ["r1:eth2", "r3:eth1"]   # 10.0.13.0/30
+    - endpoints: ["r2:eth2", "r4:eth1"]   # 10.0.24.0/30
+    - endpoints: ["r3:eth2", "r4:eth2"]   # 10.0.34.0/30
+    - endpoints: ["r1:eth3", "r5:eth1"]   # 10.0.15.0/30 (eBGP)
+    - endpoints: ["r4:eth3", "r6:e1-1"]   # 10.0.46.0/30 (eBGP)

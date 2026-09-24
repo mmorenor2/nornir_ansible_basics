@@ -1,0 +1,58 @@
+---
+# Demonstrates config push via the model-driven config module: tags
+# system0 with a description, then reads it back to confirm. Run this
+# twice - the second run should still succeed (SR Linux's candidate/commit
+# model doesn't give you the same changed=false idempotency signal
+# iosxr_config does, but the value stays correct either way).
+#
+# Run: ansible-playbook playbooks/03_configure_interface.yml
+- name: Tag system0 with a description
+  hosts: srlinux
+  gather_facts: false
+  tasks:
+    - name: Set interface description via nokia.srlinux.config
+      nokia.srlinux.config:
+        update:
+          - path: /interface[name=system0]/description
+            value: "managed by ansible - AS{{ as_number }}"
+        datastore: candidate
+        save_when: changed
+
+    - name: Read back the description to confirm
+      nokia.srlinux.get:
+        paths:
+          - path: /interface[name=system0]/description
+            datastore: state
+      register: confirm
+
+    - name: Print confirmation
+      debug:
+        var: confirm.result
+
+# cEOS side-by-side: same idea (tag an identity interface, read it back to
+# confirm), different platform/module family. r3's Loopback0 is the EOS
+# equivalent of r6's system0 - the interface that carries its router-id
+# (3.3.3.3), so it's the natural one to tag here too.
+#
+#
+# Run: ansible-playbook playbooks/03_configure_interface.yml
+
+- name: Tag Loopback0 with a description
+  hosts: eos
+  gather_facts: false
+  tasks:
+    - name: Set interface description via arista.eos.eos_config
+      arista.eos.eos_config:
+        lines:
+          - description "managed by ansible - AS65000"
+        parents: interface loopback0
+
+    - name: Read back interface facts to confirm
+      arista.eos.eos_facts:
+        gather_subset: min
+        gather_network_resources: interfaces
+      register: confirm
+
+    - name: Print confirmation
+      debug:
+        var: confirm.ansible_facts.ansible_network_resources.interfaces

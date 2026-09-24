@@ -1,0 +1,7 @@
+---
+# FRR containers have no SSH daemon - the only documented way in is
+# 'docker exec <container> vtysh' (containerlab's own FRR example does
+# exactly this: https://github.com/srl-labs/containerlab/tree/main/lab-examples/frr01).
+# community.docker's docker connection plugin runs commands the same
+# way, so Ansible needs no extra daemon baked into the image.
+ansible_connection: community.docker.docker

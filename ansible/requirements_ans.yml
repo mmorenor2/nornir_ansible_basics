@@ -1,0 +1,6 @@
+---
+collections:
+  - name: nokia.srlinux
+  - name: arista.eos
+  - name: community.docker
+  - name: ansible.netcommon

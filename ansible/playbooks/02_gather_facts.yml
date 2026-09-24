@@ -1,0 +1,56 @@
+---
+# Pulls BGP + routing state from every node - the actual "does the mesh
+# work" check, one platform-appropriate method per group.
+# Run: ansible-playbook playbooks/02_gather_facts.yml
+
+- name: FRR - BGP summary + route table via vtysh
+  hosts: frr
+  gather_facts: false
+  tasks:
+    - name: show ip bgp summary
+      ansible.builtin.command: vtysh -c "show ip bgp summary"
+      register: bgp_summary
+      changed_when: false
+
+    - name: show ip route
+      ansible.builtin.command: vtysh -c "show ip route"
+      register: route_table
+      changed_when: false
+
+    - name: Print BGP summary
+      debug:
+        var: bgp_summary.stdout_lines
+
+    - name: Print route table
+      debug:
+        var: route_table.stdout_lines
+
+- name: cEOS - BGP summary + route table
+  hosts: eos
+  gather_facts: false
+  tasks:
+    - name: Collect BGP + route state
+      arista.eos.eos_command:
+        commands:
+          - show ip bgp summary
+          - show ip route bgp
+      register: facts
+
+    - name: Print collected state
+      debug:
+        var: facts.stdout_lines
+
+- name: SR Linux - BGP neighbor + route table state
+  hosts: srlinux
+  gather_facts: false
+  tasks:
+    - name: Collect BGP neighbor state
+      nokia.srlinux.get:
+        paths:
+          - path: /network-instance[name=default]/protocols/bgp/neighbor
+            datastore: state
+      register: facts
+
+    - name: Print collected state
+      debug:
+        var: facts.result

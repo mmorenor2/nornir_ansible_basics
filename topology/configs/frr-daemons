@@ -1,0 +1,24 @@
+# Shared across all 4 FRR nodes (r1, r2, r4, r5). Only what this
+# topology needs: zebra (kernel FIB), OSPF (IGP), LDP (MPLS), BGP, and
+# staticd (for r5's blackhole route that originates its advertised
+# prefix).
+zebra=yes
+bgpd=yes
+ospfd=yes
+ldpd=yes
+staticd=yes
+ospf6d=no
+ripd=no
+ripngd=no
+isisd=no
+pimd=no
+pim6d=no
+nhrpd=no
+eigrpd=no
+babeld=no
+sharpd=no
+pbrd=no
+bfdd=no
+fabricd=no
+vrrpd=no
+pathd=no

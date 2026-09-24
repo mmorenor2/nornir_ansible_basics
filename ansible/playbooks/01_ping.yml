@@ -1,0 +1,45 @@
+---
+# Connectivity check across all three platforms, each via the mechanism
+# that actually fits it. Run: ansible-playbook playbooks/01_ping.yml
+
+- name: FRR nodes - reachable via docker exec + vtysh
+  hosts: frr
+  gather_facts: false
+  tasks:
+    - name: Run 'show version' through vtysh
+      ansible.builtin.command: vtysh -c "show version"
+      register: out
+      changed_when: false
+
+    - name: Print result
+      debug:
+        var: out.stdout_lines
+
+- name: cEOS node - reachable over SSH/network_cli
+  hosts: eos
+  gather_facts: false
+  tasks:
+    - name: Run show version
+      arista.eos.eos_command:
+        commands:
+          - show version
+      register: out
+
+    - name: Print result
+      debug:
+        var: out.stdout_lines
+
+- name: SR Linux node - reachable over JSON-RPC
+  hosts: srlinux
+  gather_facts: false
+  tasks:
+    - name: Get system version
+      nokia.srlinux.get:
+        paths:
+          - path: /system/information/version
+            datastore: state
+      register: out
+
+    - name: Print result
+      debug:
+        var: out.result

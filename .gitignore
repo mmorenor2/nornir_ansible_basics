@@ -216,3 +216,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+#ansible_nornir_specifics
+.venv/
+__pycache__/
+*.pyc
+clab-*/
+*.log
+ansible/*.retry
+nornir/backups/
+.env

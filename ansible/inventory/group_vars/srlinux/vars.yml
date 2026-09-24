@@ -1,0 +1,6 @@
+ansible_connection: ansible.netcommon.httpapi
+ansible_network_os: nokia.srlinux.srlinux
+ansible_user: "{{ vault_srlinux_user }}"
+ansible_password: "{{ vault_srlinux_pass }}"
+ansible_httpapi_use_ssl: false
+ansible_httpapi_port: 80
